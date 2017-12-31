@@ -40,7 +40,7 @@ export default class Selector {
   }
 
   mode() {
-    const counts = {};
+    const counts = [];
     for (let i = 0; i < this.len; i++) {
       const val = this.values[i];
       if (typeof counts[val] === 'undefined') {
@@ -52,8 +52,8 @@ export default class Selector {
 
     let maxCount = -Infinity;
     let maxKey;
-    for (let key in counts) {
-      if (counts[key] > maxCount) {
+    for (let key = 0; key < counts.length; key++) {
+      if (counts[key] > maxCount || (counts[key] === maxCount && Math.random() < 0.5)) {
         maxCount = counts[key];
         maxKey = key;
       }

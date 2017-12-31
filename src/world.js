@@ -1,5 +1,13 @@
+// https://www.shadertoy.com/view/4td3Ws
+// https://experilous.com/1/project/planet-generator/2015-04-07/version-2
+// Random-walk brush across surface
+
 import * as THREE from 'three';
 import Selector from './selector';
+import SimplexNoise from 'simplex-noise';
+
+
+const simplex = new SimplexNoise(Math.random);
 
 const BIOME_OCEAN = 0;
 const BIOME_PLAIN = 1;
@@ -7,9 +15,9 @@ const BIOME_FOREST = 2;
 const NUM_BIOMES = 3;
 
 const biomeWeights = [
-  2,
   1,
-  2,
+  0.5,
+  1,
 ];
 
 const biomeColors = [
@@ -18,18 +26,28 @@ const biomeColors = [
   0x008800,
 ];
 
+const shuffleArr = arr => {
+  for (let i = arr.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    let x = arr[i];
+    arr[i] = arr[j];
+    arr[j] = x;
+  }
+};
+
+
 export default class World {
-  constructor(geometry) {
+  constructor(geometry, radius) {
     // Prepare vertices
     const points = geometry.vertices.map(vert => {
       const biome = new Selector(NUM_BIOMES, biomeWeights).selectRandom();
       return {
         ...vert,
         neighbors: [],
-        height: 1,
+        height: simplex.noise3D(...vert.clone().multiplyScalar(radius / 1000).toArray()),
         biome: biome,
         //color: new THREE.Color(Math.random() * 0xFFFFFF),
-        color: biomeColors[biome],
+        color: undefined,
       }
     });
 
@@ -48,18 +66,31 @@ export default class World {
       point.neighbors = point.neighbors.filter((value, index, self) => self.indexOf(value) === index);
     });
 
+    console.log('Sample edge distance: ' + geometry.vertices[geometry.faces[0].a].distanceTo(geometry.vertices[geometry.faces[0].b]) * radius);
+
     this.geometry = geometry;
     this.points = points;
+    this.radius = radius;
   }
 
+
   advance = () => {
-    this.points.forEach(point => {
+    const shuffledPts = this.points.concat();
+    shuffleArr(shuffledPts);
+    shuffledPts.forEach(point => {
       point.biome = new Selector(point.neighbors.map(neighbor => neighbor.biome).concat(point.biome)).mode();
-      point.color = biomeColors[point.biome];
     });
   };
 
+
   update = () => {
+    this.points.forEach((point, index) => {
+      //point.color = biomeColors[point.biome];
+      point.color = point.height > 0 ? (Math.floor(point.height * 0xFF) << 8) : 0x0000FF;
+
+      this.geometry.vertices[index].copy(point).multiplyScalar(1.0 + point.height * 0.025);
+    });
+
     this.geometry.faces.forEach(face => {
       const cs = [
         new THREE.Color(this.points[face.a].color),

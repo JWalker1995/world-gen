@@ -27,7 +27,7 @@ class App extends Component {
     // light2.position.set(10, 10, 0);
     // scene.add( light2 );
 
-    const geometry = new THREE.IcosahedronGeometry( 1, 5 );
+    const geometry = new THREE.IcosahedronGeometry( 1, 6 );
     const material = new THREE.MeshStandardMaterial( { vertexColors: THREE.FaceColors } );
     const sphere = new THREE.Mesh( geometry, material );
     scene.add( sphere );
@@ -43,7 +43,7 @@ class App extends Component {
     renderer.setSize( window.innerWidth, window.innerHeight );
     container.appendChild( renderer.domElement );
 
-    const world = new World(geometry);
+    const world = new World(geometry, 2500);
     world.update();
 
     const animate = () => {
