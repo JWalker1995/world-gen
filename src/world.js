@@ -1,6 +1,8 @@
 // https://www.shadertoy.com/view/4td3Ws
 // https://experilous.com/1/project/planet-generator/2015-04-07/version-2
 // Random-walk brush across surface
+// https://en.wikipedia.org/wiki/Lloyd%27s_algorithm
+// https://en.wikipedia.org/wiki/Halton_sequence
 
 import * as THREE from 'three';
 import Selector from './selector';
@@ -40,11 +42,14 @@ export default class World {
   constructor(geometry, radius) {
     // Prepare vertices
     const points = geometry.vertices.map(vert => {
+      let height = 1;
+      height *= simplex.noise3D(...vert.clone().addScalar(0) .multiplyScalar(radius / 1000).toArray());
+      height *= simplex.noise3D(...vert.clone().addScalar(10).multiplyScalar(radius / 2000).toArray()) + 1.0;
       const biome = new Selector(NUM_BIOMES, biomeWeights).selectRandom();
       return {
         ...vert,
         neighbors: [],
-        height: simplex.noise3D(...vert.clone().multiplyScalar(radius / 1000).toArray()),
+        height: height,
         biome: biome,
         //color: new THREE.Color(Math.random() * 0xFFFFFF),
         color: undefined,
@@ -87,6 +92,10 @@ export default class World {
     this.points.forEach((point, index) => {
       //point.color = biomeColors[point.biome];
       point.color = point.height > 0 ? (Math.floor(point.height * 0xFF) << 8) : 0x0000FF;
+
+      if (Math.random() < 0.001) {
+        point.color = 0xFF0000;
+      }
 
       this.geometry.vertices[index].copy(point).multiplyScalar(1.0 + point.height * 0.025);
     });
